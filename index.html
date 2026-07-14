@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>クーポン受け取り</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X1GLHSY02D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-X1GLHSY02D');
+</script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -92,8 +100,6 @@
     font-size: 13px;
     letter-spacing: 0.5px;
   }
-
-  /* ===== VIPチケット ===== */
   .ticket {
     background: linear-gradient(155deg, #1c1c1c 0%, #0c0c0c 100%);
     border-radius: 14px;
@@ -251,7 +257,7 @@
     animation: flash-fade 0.6s ease-out forwards;
   }
   @keyframes flash-fade { to { opacity: 0; } }
- .shop-btn {
+  .shop-btn {
     display: block;
     margin-top: 18px;
     padding: 15px;
@@ -284,9 +290,7 @@
     transform: translateY(-50%);
     animation: btnArrow 0.8s ease-in-out infinite alternate;
   }
-  .shop-btn:active {
-    transform: scale(0.96);
-  }
+  .shop-btn:active { transform: scale(0.96); }
   @keyframes btnBounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
@@ -304,14 +308,6 @@
     100% { right: 10px; }
   }
 </style>
- <!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-X1GLHSY02D"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-X1GLHSY02D');
-</script>
 </head>
 <body>
 
@@ -328,12 +324,12 @@
 
 <script>
   let userId = "";
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxGO-eJaWiJUO1Us2aP2vPUvlTSW-u7Z2q74NpUZWS2GuZqFrUnXcRwA6zt6hAIQ5lc/exec";
-  const COUPON_IMAGE_URL = "https://sanki-tsumekae.github.io/coupon-liff/S__34807860.jpg"; // ← 画像アップロード後にファイル名を変更
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw48DPzYyOBemiJPzExcC1NANCLBv61biP49RrqO5veqwtMgfBuW_vGuhLE3nVucPom/exec";
+  const COUPON_IMAGE_URL = "https://33sanki.github.io/coupon-liff-prod/coupon-image.png";
 
   document.getElementById("result").innerHTML = "<p class='loading'>LIFF初期化中...</p>";
 
-  liff.init({ liffId: "2010460051-Ad6VtlEi" }).then(() => {
+  liff.init({ liffId: "2010704345-nkeT5x5b" }).then(() => {
     if (!liff.isLoggedIn()) {
       liff.login();
     } else {
@@ -411,13 +407,13 @@
     }
   }
 
-　function closeImageOverlay() {
+  function closeImageOverlay() {
     const overlay = document.getElementById("couponImageOverlay");
     const hint = document.getElementById("tapHint");
     if (overlay) overlay.remove();
     if (hint) hint.remove();
   }
- 
+
   function copyCoupon() {
     const code = document.getElementById("couponCode").innerText;
     navigator.clipboard.writeText(code).then(() => {
@@ -429,7 +425,6 @@
         hint.style.color = "";
       }, 2000);
     });
-    // アナリティクスにコピーイベントを送信
     gtag('event', 'coupon_copy', {
       'event_category': 'coupon',
       'event_label': 'copy_button'
