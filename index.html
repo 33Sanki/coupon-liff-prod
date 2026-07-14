@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クーポン受け取り</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", Arial, sans-serif;
+    background: radial-gradient(ellipse at top, #1a1a1a 0%, #000000 70%);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    background: linear-gradient(160deg, #161616 0%, #0a0a0a 100%);
+    border-radius: 18px;
+    padding: 36px 26px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 20px 50px rgba(0,0,0,0.6);
+    text-align: center;
+    border: 1px solid rgba(212,175,55,0.4);
+    position: relative;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 10px; left: 10px; right: 10px; bottom: 10px;
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 12px;
+    pointer-events: none;
+  }
+  h1 {
+    font-size: 19px;
+    color: #e8c873;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  p.desc {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 26px;
+    line-height: 1.7;
+    letter-spacing: 0.3px;
+  }
+  input {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background: #0d0d0d;
+    border: 1px solid rgba(212,175,55,0.35);
+    color: #f0f0f0;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+  }
+  input::placeholder { color: #555; }
+  input:focus {
+    outline: none;
+    border-color: #d4af37;
+  }
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #0a0a0a;
+    background: linear-gradient(135deg, #f5d98a 0%, #d4af37 50%, #b8932e 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 14px rgba(212,175,55,0.3);
+  }
+  button:disabled { opacity: 0.4; }
+  #result { margin-top: 22px; }
+  .error-box {
+    color: #ff6b6b;
+    margin-top: 16px;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+  .loading {
+    color: #888;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== VIPチケット ===== */
+  .ticket {
+    background: linear-gradient(155deg, #1c1c1c 0%, #0c0c0c 100%);
+    border-radius: 14px;
+    padding: 30px 22px;
+    margin-top: 18px;
+    position: relative;
+    border: 1px solid rgba(212,175,55,0.5);
+    box-shadow: 0 0 30px rgba(212,175,55,0.12), inset 0 0 20px rgba(212,175,55,0.04);
+    animation: cardIn 0.7s cubic-bezier(0.2,0.9,0.3,1.1);
+    overflow: hidden;
+  }
+  .ticket::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -150%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(212,175,55,0.18), transparent);
+    animation: shine 2.6s ease-in-out infinite;
+  }
+  @keyframes shine {
+    0% { left: -150%; }
+    50%, 100% { left: 150%; }
+  }
+  @keyframes cardIn {
+    0% { transform: scale(0.85) translateY(20px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .ticket-header {
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #d4af37;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .ticket-congrats {
+    font-size: 17px;
+    font-weight: bold;
+    color: #f5e6b8;
+    margin-bottom: 18px;
+  }
+  .ticket-divider {
+    border-top: 1px solid rgba(212,175,55,0.3);
+    margin: 0 0 18px 0;
+    position: relative;
+  }
+  .ticket-divider::before, .ticket-divider::after {
+    content: "◆";
+    position: absolute;
+    top: -7px;
+    font-size: 10px;
+    color: #d4af37;
+  }
+  .ticket-divider::before { left: 0; }
+  .ticket-divider::after { right: 0; }
+  .ticket-discount {
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f5d98a, #d4af37, #f5d98a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 18px;
+    letter-spacing: 1px;
+  }
+  .ticket-label {
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .coupon-code {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f5e6b8;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    user-select: all;
+    padding: 12px 10px;
+    border: 1px dashed rgba(212,175,55,0.5);
+    border-radius: 8px;
+    background: rgba(212,175,55,0.05);
+  }
+  .coupon-code:active { transform: scale(0.96); }
+  .copy-hint {
+    font-size: 11px;
+    color: #d4af37;
+    margin-top: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .ticket-expiry {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #e08a8a;
+    font-weight: bold;
+    letter-spacing: 1px;
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.25);
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+  .ticket-note {
+    font-size: 11px;
+    color: #777;
+    margin-top: 18px;
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+  }
+  .coupon-image-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    background: #000;
+    z-index: 997;
+    cursor: pointer;
+    animation: cardIn 0.5s ease;
+  }
+  .coupon-image {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(212,175,55,0.2);
+    display: block;
+  }
+  .tap-hint {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #f5d98a 0%, #d4af37 50%, #b8932e 100%);
+    color: #0a0a0a;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 14px 28px;
+    border-radius: 30px;
+    z-index: 998;
+    letter-spacing: 1px;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(212,175,55,0.6);
+    animation: cardIn 0.5s ease, btnPulse 2.4s ease-in-out infinite;
+  }
+  .flash {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle, rgba(212,175,55,0.5), transparent 70%);
+    z-index: 998;
+    pointer-events: none;
+    animation: flash-fade 0.6s ease-out forwards;
+  }
+  @keyframes flash-fade { to { opacity: 0; } }
+ .shop-btn {
+    display: block;
+    margin-top: 18px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f5d98a 0%, #d4af37 50%, #b8932e 100%);
+    color: #0a0a0a;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 14px rgba(212,175,55,0.4);
+    position: relative;
+    overflow: hidden;
+    animation: btnBounce 1.8s ease-in-out infinite, btnPulse 2.4s ease-in-out infinite;
+  }
+  .shop-btn::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -150%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: btnShine 2s ease-in-out infinite;
+  }
+  .shop-btn::after {
+    content: "→";
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: btnArrow 0.8s ease-in-out infinite alternate;
+  }
+  .shop-btn:active {
+    transform: scale(0.96);
+  }
+  @keyframes btnBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  @keyframes btnPulse {
+    0%, 100% { box-shadow: 0 4px 14px rgba(212,175,55,0.4); }
+    50% { box-shadow: 0 4px 28px rgba(212,175,55,0.8), 0 0 20px rgba(212,175,55,0.4); }
+  }
+  @keyframes btnShine {
+    0% { left: -150%; }
+    50%, 100% { left: 150%; }
+  }
+  @keyframes btnArrow {
+    0% { right: 18px; }
+    100% { right: 10px; }
+  }
+</style>
+ <!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X1GLHSY02D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-X1GLHSY02D');
+</script>
+</head>
+<body>
+
+<div class="card">
+  <div id="formArea">
+    <h1>🎁 期間限定クーポン 🎁</h1>
+    <p class="desc">SNSの投稿に掲載されているキーワードを入力してください。</p>
+    <input type="text" id="keywordInput" placeholder="キーワードを入力">
+    <button id="submitBtn" onclick="submitKeyword()">送信する</button>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  let userId = "";
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxGO-eJaWiJUO1Us2aP2vPUvlTSW-u7Z2q74NpUZWS2GuZqFrUnXcRwA6zt6hAIQ5lc/exec";
+  const COUPON_IMAGE_URL = "https://sanki-tsumekae.github.io/coupon-liff/S__34807860.jpg"; // ← 画像アップロード後にファイル名を変更
+
+  document.getElementById("result").innerHTML = "<p class='loading'>LIFF初期化中...</p>";
+
+  liff.init({ liffId: "2010460051-Ad6VtlEi" }).then(() => {
+    if (!liff.isLoggedIn()) {
+      liff.login();
+    } else {
+      liff.getProfile().then(profile => {
+        userId = profile.userId;
+        document.getElementById("result").innerHTML = "";
+      }).catch(err => {
+        document.getElementById("result").innerHTML = "<div class='error-box'>プロフィール取得エラー: " + JSON.stringify(err) + "</div>";
+      });
+    }
+  }).catch(err => {
+    document.getElementById("result").innerHTML = "<div class='error-box'>初期化エラー: " + JSON.stringify(err) + "</div>";
+  });
+
+  function submitKeyword() {
+    const keyword = document.getElementById("keywordInput").value.trim();
+    if (!keyword) {
+      alert("キーワードを入力してください");
+      return;
+    }
+    if (!userId) {
+      alert("ユーザー情報の取得中です。少し待ってから再度お試しください。");
+      return;
+    }
+
+    document.getElementById("submitBtn").disabled = true;
+    document.getElementById("result").innerHTML = "<p class='loading'>確認中...</p>";
+
+    fetch(GAS_API_URL, {
+      method: "POST",
+      body: JSON.stringify({ userId: userId, keyword: keyword }),
+      headers: { "Content-Type": "text/plain" }
+    })
+      .then(res => res.json())
+      .then(onResult)
+      .catch(onError);
+  }
+
+  function onResult(res) {
+    document.getElementById("submitBtn").disabled = false;
+
+    if (res.success) {
+      document.getElementById("formArea").style.display = "none";
+
+      const useImage = res.imageUrl && res.imageUrl.trim() !== "";
+      const imageHtml = useImage ? `
+          <img src="${res.imageUrl}" alt="クーポン画像" class="coupon-image-overlay" id="couponImageOverlay" onclick="closeImageOverlay()">
+          <div class="tap-hint" id="tapHint">✨ タップして閉じる → クーポンコードをコピー！</div>
+          <img src="${res.imageUrl}" alt="クーポン画像" class="coupon-image" style="display:none;" id="couponImageSmall">
+      ` : "";
+
+      const ticketHeaderHtml = useImage ? "" : `
+          <div class="ticket-header">VIP COUPON</div>
+          <div class="ticket-congrats">🎉 おめでとうございます 🎉</div>
+          <div class="ticket-divider"></div>
+          <div class="ticket-discount">${res.discount || "特典クーポン"}</div>
+      `;
+
+      document.getElementById("result").innerHTML = `
+        <div class="ticket">
+          ${imageHtml}
+          ${ticketHeaderHtml}
+          <div class="ticket-label">COUPON CODE</div>
+          <div class="coupon-code" id="couponCode" onclick="copyCoupon()">${res.couponCode}</div>
+          <p class="copy-hint" id="copyHint">タップしてコピー 📋</p>
+          ${res.expiryText ? `<div class="ticket-expiry">有効期限：${res.expiryText}</div>` : ""}
+          <p class="ticket-note">このコードを公式通販サイトの<br>クーポン欄に入力してください。<br>※公式通販サイト限定クーポンです。</p>
+          <a href="https://www.sanki-web.net/smartphone/index.html" target="_blank" class="shop-btn" onclick="gtag('event', 'shop_button_click', {'event_category': 'coupon', 'event_label': 'shop_button'})">🛒 公式通販でクーポンを使う</a>
+        </div>
+      `;
+      launchConfettiBurst();
+      launchFlash();
+    } else {
+      document.getElementById("result").innerHTML = "<div class='error-box'>" + res.message + "</div>";
+    }
+  }
+
+　function closeImageOverlay() {
+    const overlay = document.getElementById("couponImageOverlay");
+    const hint = document.getElementById("tapHint");
+    if (overlay) overlay.remove();
+    if (hint) hint.remove();
+  }
+ 
+  function copyCoupon() {
+    const code = document.getElementById("couponCode").innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      const hint = document.getElementById("copyHint");
+      hint.innerText = "✅ コピーしました！";
+      hint.style.color = "#7ed957";
+      setTimeout(() => {
+        hint.innerText = "タップしてコピー 📋";
+        hint.style.color = "";
+      }, 2000);
+    });
+    // アナリティクスにコピーイベントを送信
+    gtag('event', 'coupon_copy', {
+      'event_category': 'coupon',
+      'event_label': 'copy_button'
+    });
+  }
+
+  function launchFlash() {
+    const flash = document.createElement("div");
+    flash.className = "flash";
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
+  }
+
+  function launchConfettiBurst() {
+    const colors = ["#d4af37", "#f5d98a", "#b8932e", "#fff5d6", "#e8c873"];
+    const shapes = ["✨", "🎉", "⭐", "🎊"];
+
+    const targetEl = document.getElementById("couponCode");
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 2;
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      targetX = rect.left + rect.width / 2;
+      targetY = rect.top + rect.height / 2;
+    }
+
+    const originLeft = { x: 0, y: window.innerHeight };
+    const originRight = { x: window.innerWidth, y: window.innerHeight };
+
+    burstFrom(originLeft, targetX, targetY, colors, shapes);
+    burstFrom(originRight, targetX, targetY, colors, shapes);
+  }
+
+  function burstFrom(origin, targetX, targetY, colors, shapes) {
+    for (let i = 0; i < 70; i++) {
+      const el = document.createElement("div");
+      const isRibbon = Math.random() > 0.6;
+      const size = isRibbon ? (Math.random() * 6 + 8) : (Math.random() * 7 + 5);
+
+      el.style.position = "fixed";
+      el.style.left = origin.x + "px";
+      el.style.top = origin.y + "px";
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.zIndex = "999";
+      el.style.pointerEvents = "none";
+
+      if (isRibbon) {
+        el.style.width = size + "px";
+        el.style.height = (size * 2.5) + "px";
+        el.style.borderRadius = "2px";
+      } else {
+        el.style.width = size + "px";
+        el.style.height = size + "px";
+        el.style.borderRadius = Math.random() > 0.5 ? "50%" : "0";
+      }
+
+      document.body.appendChild(el);
+
+      const power = 0.8 + Math.random() * 0.8;
+      const spreadX = targetX + (Math.random() - 0.5) * 350;
+      const spreadY = targetY + (Math.random() - 0.5) * 200;
+      const burstDx = (spreadX - origin.x) * power;
+      const burstDy = (spreadY - origin.y) - (250 + Math.random() * 150) * power;
+      const burstDuration = 500 + Math.random() * 300;
+
+      const fallDx = burstDx + (Math.random() - 0.5) * 80;
+      const fallDy = burstDy + 500 + Math.random() * 300;
+      const fallDuration = 1200 + Math.random() * 800;
+
+      const rotateAmount = 360 + Math.random() * 720;
+
+      requestAnimationFrame(() => {
+        el.style.transition = `transform ${burstDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)`;
+        el.style.transform = `translate(${burstDx}px, ${burstDy}px) rotate(${rotateAmount / 2}deg)`;
+
+        setTimeout(() => {
+          el.style.transition = `transform ${fallDuration}ms cubic-bezier(0.4, 0, 0.6, 1), opacity ${fallDuration}ms ease-in`;
+          el.style.transform = `translate(${fallDx}px, ${fallDy}px) rotate(${rotateAmount}deg)`;
+          el.style.opacity = "0";
+        }, burstDuration);
+      });
+
+      setTimeout(() => el.remove(), burstDuration + fallDuration + 200);
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const emoji = document.createElement("div");
+      emoji.innerText = shapes[Math.floor(Math.random() * shapes.length)];
+      emoji.style.position = "fixed";
+      emoji.style.left = origin.x + "px";
+      emoji.style.top = origin.y + "px";
+      emoji.style.fontSize = (16 + Math.random() * 14) + "px";
+      emoji.style.zIndex = "999";
+      emoji.style.pointerEvents = "none";
+      document.body.appendChild(emoji);
+
+      const power = 0.8 + Math.random() * 0.8;
+      const spreadX = targetX + (Math.random() - 0.5) * 280;
+      const spreadY = targetY + (Math.random() - 0.5) * 150;
+      const burstDx = (spreadX - origin.x) * power;
+      const burstDy = (spreadY - origin.y) - (250 + Math.random() * 150) * power;
+      const burstDuration = 500 + Math.random() * 300;
+
+      const fallDx = burstDx + (Math.random() - 0.5) * 60;
+      const fallDy = burstDy + 450 + Math.random() * 250;
+      const fallDuration = 1100 + Math.random() * 700;
+
+      requestAnimationFrame(() => {
+        emoji.style.transition = `transform ${burstDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)`;
+        emoji.style.transform = `translate(${burstDx}px, ${burstDy}px) rotate(180deg)`;
+
+        setTimeout(() => {
+          emoji.style.transition = `transform ${fallDuration}ms cubic-bezier(0.4, 0, 0.6, 1), opacity ${fallDuration}ms ease-in`;
+          emoji.style.transform = `translate(${fallDx}px, ${fallDy}px) rotate(540deg)`;
+          emoji.style.opacity = "0";
+        }, burstDuration);
+      });
+
+      setTimeout(() => emoji.remove(), burstDuration + fallDuration + 200);
+    }
+  }
+
+  function onError(err) {
+    document.getElementById("submitBtn").disabled = false;
+    document.getElementById("result").innerHTML = "<div class='error-box'>エラーが発生しました: " + JSON.stringify(err) + "</div>";
+  }
+</script>
+
+</body>
+</html>
